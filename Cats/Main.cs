@@ -5,8 +5,6 @@ using System.Drawing;
 using System.Media;
 using System.Net;
 using System.Reflection;
-using System.Security.Permissions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Timer = System.Windows.Forms.Timer;
@@ -15,6 +13,7 @@ namespace Cats
 {
     public partial class Main : Form
     {
+        //Original song: Cats (Sped Up) by The living Tombstone
         private static SoundPlayer player = new SoundPlayer(new WebClient().OpenRead("https://cdn.discordapp.com/attachments/1158146926252916846/1175239862253785118/Cats-Sped-Up.wav"));
 
         private static Random random = new Random();
@@ -33,6 +32,7 @@ namespace Cats
 
         private static int fps = 40;
         private static int mspf = 1000 / fps;
+
         public Main()
         {
             player.Load();
@@ -71,7 +71,7 @@ namespace Cats
 
                     case 3:
                         Init(round_3);
-                       
+
                         break;
                 }
 
@@ -93,7 +93,6 @@ namespace Cats
                 Environment.Exit(0);
             });
         }
-     
 
         private static Image[] round_1 = { (RandomBool() ? Properties.Resources.cat_1 : Properties.Resources.cat_2), Properties.Resources.cat_3, Properties.Resources.cat_4 };
 
@@ -125,6 +124,7 @@ namespace Cats
 
         private const int minVelocity = 4;
         private const int maxVelocity = 15;
+
         private async void TickMovement(object sender, EventArgs e)
         {
             await Task.Delay(Math.Max(0, mspf - (int)sw.ElapsedMilliseconds));
