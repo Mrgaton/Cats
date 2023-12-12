@@ -14,7 +14,7 @@ namespace Cats
     public partial class Main : Form
     {
         //Original song: Cats (Sped Up) by The living Tombstone
-        private static SoundPlayer player = new SoundPlayer(new WebClient().OpenRead("https://cdn.discordapp.com/attachments/1158146926252916846/1175239862253785118/Cats-Sped-Up.wav"));
+        private static SoundPlayer player = new SoundPlayer(new WebClient().OpenRead("https://genocidioastral.fundacionamigos.repl.co/CDN/CatsSpeedUp.wav"));
 
         private static Random random = new Random();
 
