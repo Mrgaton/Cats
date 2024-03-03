@@ -42,26 +42,27 @@ namespace Cats
             this.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
             this.TopMost = true;
             this.ShowInTaskbar = false;
-
             this.TransparencyKey = this.BackColor = Color.FromArgb(255, 0, 0, 0);
 
             currentScreen = Screen.FromHandle(this.Handle);
 
-            catSize = (currentScreen.Bounds.Width / 100) * 7;
+            catSize = (currentScreen.Bounds.Width / 100) * 8;
 
             Init(round_1);
 
-            Timer movement = new Timer();
-            movement.Interval = mspf / 2;
-            movement.Start();
-            movement.Tick += TickMovement;
+            Task.Factory.StartNew(async () =>
+            {
+                Invoke(new MethodInvoker(() =>
+                {
+                    StartMovement();
+                }));
+            });
 
             Timer mooore = new Timer();
             mooore.Interval = (15 * 1000) + 500;
-
             int roundNum = 2;
 
-            mooore.Tick += (object sender, EventArgs e) =>
+            mooore.Tick += (object s, EventArgs i) =>
             {
                 switch (roundNum)
                 {
@@ -88,7 +89,7 @@ namespace Cats
 
                 boxCollisions = false;
 
-                await Task.Delay(5000);
+                await Task.Delay(7500);
 
                 Environment.Exit(0);
             });
@@ -119,94 +120,99 @@ namespace Cats
 
         private Dictionary<int, Point> velocities = new Dictionary<int, Point>();
 
-        private const int Gravity = 4;
-        private const int TerminalVelocity = 80;
+        private const int Gravity = 5;
+        private const int TerminalVelocity = 70;
 
         private const int minVelocity = 4;
-        private const int maxVelocity = 15;
+        private const int maxVelocity = 10;
 
-        private async void TickMovement(object sender, EventArgs e)
+        private async void StartMovement()
         {
-            await Task.Delay(Math.Max(0, mspf - (int)sw.ElapsedMilliseconds));
-
-            sw.Restart();
-
-            foreach (Control control in this.Controls)
+            while (true)
             {
-                if (control is PictureBox pictureBox)
+                var lastMS = sw.ElapsedMilliseconds;
+
+                sw.Restart();
+
+                await Task.Delay(Math.Max(0, mspf - (int)lastMS));
+
+                foreach (Control control in this.Controls)
                 {
-                    int picId = pictureBox.GetHashCode();
-
-                    if (!velocities.ContainsKey(picId)) velocities[picId] = new Point(CustomNext(-minVelocity, -maxVelocity, minVelocity, maxVelocity), CustomNext(-minVelocity, -maxVelocity, minVelocity, maxVelocity));
-
-                    //Console.WriteLine(picId + ": " + velocities[picId]);
-
-                    pictureBox.Left += velocities[picId].X;
-                    pictureBox.Top += velocities[picId].Y;
-
-                    if (boxCollisions)
+                    if (control is PictureBox pictureBox)
                     {
-                        if (pictureBox.Left < 0)
+                        int picId = pictureBox.GetHashCode();
+
+                        if (!velocities.ContainsKey(picId)) velocities[picId] = new Point(CustomNext(-minVelocity, -maxVelocity, minVelocity, maxVelocity), CustomNext(-minVelocity, -maxVelocity, minVelocity, maxVelocity));
+
+                        //Console.WriteLine(picId + ": " + velocities[picId]);
+
+                        pictureBox.Left += velocities[picId].X;
+                        pictureBox.Top += velocities[picId].Y;
+
+                        if (boxCollisions)
                         {
-                            velocities[picId] = new Point(Math.Abs(velocities[picId].X), velocities[picId].Y);
-
-                            pictureBox.Left = 0;
-                        }
-                        else if (pictureBox.Top < 0)
-                        {
-                            velocities[picId] = new Point(velocities[picId].X, Math.Abs(velocities[picId].Y));
-
-                            pictureBox.Top = 0;
-                        }
-                        else if (pictureBox.Right > this.ClientSize.Width)
-                        {
-                            velocities[picId] = new Point(-Math.Abs(velocities[picId].X), velocities[picId].Y);
-
-                            pictureBox.Left = this.ClientSize.Width - pictureBox.Width;
-                        }
-                        else if (pictureBox.Bottom > this.ClientSize.Height)
-                        {
-                            velocities[picId] = new Point(velocities[picId].X, -Math.Abs(velocities[picId].Y));
-
-                            pictureBox.Top = this.ClientSize.Height - pictureBox.Height;
-                        }
-                    }
-
-                    foreach (Control otherControl in this.Controls)
-                    {
-                        if (otherControl is PictureBox otherPictureBox && otherPictureBox != pictureBox && pictureBox.Bounds.IntersectsWith(otherPictureBox.Bounds))
-                        {
-                            int otherPicId = otherPictureBox.GetHashCode();
-
-                            // Calculate the direction based on the relative positions of the picture boxes
-                            int directionX = pictureBox.Location.X > otherPictureBox.Location.X ? 1 : -1;
-                            int directionY = pictureBox.Location.Y > otherPictureBox.Location.Y ? 1 : -1;
-
-                            try
+                            if (pictureBox.Left < 0)
                             {
-                                velocities[picId] = new Point(velocities[picId].X * directionX, velocities[picId].Y * directionY);
-                                velocities[otherPicId] = new Point(velocities[otherPicId].X * -directionX, velocities[otherPicId].Y * -directionY);
+                                velocities[picId] = new Point(Math.Abs(velocities[picId].X), velocities[picId].Y);
 
-                                /*if (pictureBox.Bounds.IntersectsWith(otherPictureBox.Bounds))
-                                {
-                                    pictureBox.Location = new Point(pictureBox.Location.X + velocities[picId].X, pictureBox.Location.Y + velocities[picId].Y);
-                                    otherPictureBox.Location = new Point(otherPictureBox.Location.X + velocities[otherPicId].X, otherPictureBox.Location.Y + velocities[otherPicId].Y);
-                                }*/
+                                pictureBox.Left = 0;
                             }
-                            catch { }
+                            else if (pictureBox.Top < 0)
+                            {
+                                velocities[picId] = new Point(velocities[picId].X, Math.Abs(velocities[picId].Y));
+
+                                pictureBox.Top = 0;
+                            }
+                            else if (pictureBox.Right > this.ClientSize.Width)
+                            {
+                                velocities[picId] = new Point(-Math.Abs(velocities[picId].X), velocities[picId].Y);
+
+                                pictureBox.Left = this.ClientSize.Width - pictureBox.Width;
+                            }
+                            else if (pictureBox.Bottom > this.ClientSize.Height)
+                            {
+                                velocities[picId] = new Point(velocities[picId].X, -Math.Abs(velocities[picId].Y));
+
+                                pictureBox.Top = this.ClientSize.Height - pictureBox.Height;
+                            }
                         }
-                    }
 
-                    if (pictureBox.Bottom < this.ClientSize.Height)
-                    {
-                        // Apply gravity
-                        var velocity = velocities[picId];
-                        int newY = velocity.Y + Gravity;
+                        foreach (Control otherControl in this.Controls)
+                        {
+                            if (otherControl is PictureBox otherPictureBox && otherPictureBox != pictureBox && pictureBox.Bounds.IntersectsWith(otherPictureBox.Bounds))
+                            {
+                                int otherPicId = otherPictureBox.GetHashCode();
 
-                        if (newY > TerminalVelocity) newY = TerminalVelocity;
-                        if (newY < -TerminalVelocity) newY = -TerminalVelocity * 2;
+                                // Calculate the direction based on the relative positions of the picture boxes
+                                int directionX = pictureBox.Location.X > otherPictureBox.Location.X ? 1 : -1;
+                                int directionY = pictureBox.Location.Y > otherPictureBox.Location.Y ? 1 : -1;
 
-                        velocities[picId] = new Point(velocity.X, newY);
+                                try
+                                {
+                                    velocities[picId] = new Point(velocities[picId].X * directionX, velocities[picId].Y * directionY);
+                                    velocities[otherPicId] = new Point(velocities[otherPicId].X * -directionX, velocities[otherPicId].Y * -directionY);
+
+                                    /*if (pictureBox.Bounds.IntersectsWith(otherPictureBox.Bounds))
+                                    {
+                                        pictureBox.Location = new Point(pictureBox.Location.X + velocities[picId].X, pictureBox.Location.Y + velocities[picId].Y);
+                                        otherPictureBox.Location = new Point(otherPictureBox.Location.X + velocities[otherPicId].X, otherPictureBox.Location.Y + velocities[otherPicId].Y);
+                                    }*/
+                                }
+                                catch { }
+                            }
+                        }
+
+                        if (pictureBox.Bottom < this.ClientSize.Height)
+                        {
+                            // Apply gravity
+                            var velocity = velocities[picId];
+                            int newY = velocity.Y + Gravity;
+
+                            if (newY > TerminalVelocity) newY = TerminalVelocity;
+                            if (newY < -TerminalVelocity) newY = -TerminalVelocity * 2;
+
+                            velocities[picId] = new Point(velocity.X, newY);
+                        }
                     }
                 }
             }
